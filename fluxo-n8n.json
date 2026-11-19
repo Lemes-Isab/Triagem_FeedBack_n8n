@@ -1,0 +1,399 @@
+{
+  "name": "Triagem de feedbacks de clientes - delivery",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Feedback do cliente",
+        "formDescription": "Conte como foi sua experiência com nosso app de delivery.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "feedback",
+              "fieldType": "textarea",
+              "placeholder": "Escreva seu feedback aqui",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "path": "delivery-feedback-triagem",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Obrigado pelo seu feedback!"
+            }
+          }
+        }
+      },
+      "id": "cc13ed8b-f997-493d-b18e-bc9f6b729e57",
+      "name": "Formulário de feedback",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "a7843e73-2a10-4a1e-9a64-0623436a491d"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Feedback do cliente:\n{{ $json.feedback }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Você faz a triagem de feedbacks de clientes de um app de delivery. Leia o feedback e classifique: sentimento, categoria, urgência e um resumo de uma linha. Responda apenas com o JSON no formato pedido. Baseie-se somente no que o feedback diz, sem supor motivos que não estão escritos.\n\nRegras:\n\n1. Categoria \"outros\": se o feedback não deixar claro o motivo (por exemplo \"Ok.\", \"Péssimo!\", \"Vcs são ruins\", \"Nunca mais peço\" sem dizer o porquê), use \"outros\". Não adivinhe a categoria. Só use entrega, comida, atendimento, preço ou app quando o feedback citar esse assunto de forma explícita.\n\n2. Comida x entrega x atendimento: \"comida\" é qualidade, sabor, temperatura, frescor, porção, comida crua, queimada ou estragada e erros de preparo do restaurante (ingrediente errado, ingrediente que o cliente pediu para tirar, alergia). \"entrega\" é somente o que envolve o entregador (comportamento), atraso e embalagem danificada. Item faltando no pedido continua sendo \"entrega\". Se o feedback falar de comida e de entrega, use a categoria do problema principal. \"atendimento\" é somente para o suporte ao cliente. \"preço\" é sobre valores, taxas e promoções. \"app\" é sobre o aplicativo em si (travamentos, interface, funcionalidades).\n\n3. Sentimento (positivo, neutro ou negativo): é negativo quando o feedback relata um problema concreto, ou seja, algo que deu errado (atraso, item errado, cobrança indevida, travamento, mau atendimento). Elogio acompanhado de uma simples sugestão de melhoria, sem problema concreto, continua positivo. Insatisfação genérica sem problema concreto (por exemplo \"Péssimo!\") é negativa. Feedback sem opinião clara, como \"Ok.\", é neutro.\n\n4. Urgência (baixa, média ou alta): use \"alta\" somente para cobrança indevida, pedido não entregue, comida estragada, alergia ou outro risco à saúde (como intoxicação) ou pedido explícito de reembolso. Raiva ou ameaça de não pedir mais, sem um desses problemas concretos, é \"média\". Reclamações pontuais sem gravidade são \"média\" ou \"baixa\"; elogios, sugestões simples e feedback sem conteúdo são \"baixa\"."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "ed7397b8-21e2-43db-8034-684b00d889e7",
+      "name": "Classificar feedback",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "a4ac827c-514f-4570-ad5f-5ab88e724ad9",
+      "name": "Modelo OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"sentimento\":{\"type\":\"string\",\"enum\":[\"positivo\",\"neutro\",\"negativo\"]},\"categoria\":{\"type\":\"string\",\"enum\":[\"entrega\",\"comida\",\"atendimento\",\"preço\",\"app\",\"outros\"]},\"urgencia\":{\"type\":\"string\",\"enum\":[\"baixa\",\"média\",\"alta\"]},\"resumo\":{\"type\":\"string\",\"description\":\"Resumo do feedback em uma única linha\"}},\"required\":[\"sentimento\",\"categoria\",\"urgencia\",\"resumo\"]}"
+      },
+      "id": "d0333e03-7f88-4ec5-b27f-edd8ba3d80ef",
+      "name": "Formato JSON da triagem",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "data",
+              "type": "string",
+              "value": "={{ $(\"Formulário de feedback\").item.json.submittedAt }}"
+            },
+            {
+              "id": "f2",
+              "name": "feedback",
+              "type": "string",
+              "value": "={{ $(\"Formulário de feedback\").item.json.feedback }}"
+            },
+            {
+              "id": "f3",
+              "name": "sentimento",
+              "type": "string",
+              "value": "={{ $json.output.sentimento }}"
+            },
+            {
+              "id": "f4",
+              "name": "categoria",
+              "type": "string",
+              "value": "={{ $json.output.categoria }}"
+            },
+            {
+              "id": "f5",
+              "name": "urgencia",
+              "type": "string",
+              "value": "={{ $json.output.urgencia }}"
+            },
+            {
+              "id": "f6",
+              "name": "resumo",
+              "type": "string",
+              "value": "={{ $json.output.resumo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1356c41e-c49a-4b20-806d-a23f769a8b0a",
+      "name": "Organizar campos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "ID_DA_PLANILHA",
+          "cachedResultName": "triagem de feedbacks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/ID_DA_PLANILHA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/ID_DA_PLANILHA/edit#gid=0",
+          "__regex": "https:\\/\\/docs\\.google\\.com\\/spreadsheets\\/d\\/[0-9a-zA-Z\\-_]+.*\\#gid=([0-9]+)"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "data": "={{ $json.data }}",
+            "feedback": "={{ $json.feedback }}",
+            "sentimento": "={{ $json.sentimento }}",
+            "categoria": "={{ $json.categoria }}",
+            "urgencia": "={{ $json.urgencia }}",
+            "resumo": "={{ $json.resumo }}"
+          },
+          "schema": [
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sentimento",
+              "displayName": "sentimento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "urgencia",
+              "displayName": "urgencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "resumo",
+              "displayName": "resumo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a5d261b3-f55a-44f0-baf3-104a5b93c6f4",
+      "name": "Salvar na planilha",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": null,
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Organizar campos\").item.json.urgencia }}",
+              "rightValue": "alta",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a63ffcc8-5988-4440-a49a-57b4090ec4d5",
+      "name": "Urgência alta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1024,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "email@exemplo.com",
+        "subject": "=[URGENTE] Feedback crítico — {{ $(\"Organizar campos\").item.json.categoria }}",
+        "message": "=<p><b>Um feedback de urgência alta foi recebido.</b></p><p><b>Resumo:</b> {{ $(\"Organizar campos\").item.json.resumo }}</p><p><b>Sentimento:</b> {{ $(\"Organizar campos\").item.json.sentimento }}<br><b>Categoria:</b> {{ $(\"Organizar campos\").item.json.categoria }}</p><p><b>Feedback original:</b><br>{{ $(\"Organizar campos\").item.json.feedback }}</p>",
+        "options": {}
+      },
+      "id": "9cc84584-1cfc-466e-858d-425ef69e1a26",
+      "name": "Enviar alerta por e-mail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        112
+      ],
+      "webhookId": "9188b139-c3b1-4834-ae7f-152aa63f23c6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": null,
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Formulário de feedback": {
+      "main": [
+        [
+          {
+            "node": "Classificar feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classificar feedback": {
+      "main": [
+        [
+          {
+            "node": "Organizar campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo OpenAI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classificar feedback",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formato JSON da triagem": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classificar feedback",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Organizar campos": {
+      "main": [
+        [
+          {
+            "node": "Salvar na planilha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar na planilha": {
+      "main": [
+        [
+          {
+            "node": "Urgência alta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Urgência alta?": {
+      "main": [
+        [
+          {
+            "node": "Enviar alerta por e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cb169076-5a32-4f4a-a044-baa3696784f8",
+  "nodeGroups": [],
+  "id": "p2pfR3zGfgxA1fLF",
+  "tags": []
+}
