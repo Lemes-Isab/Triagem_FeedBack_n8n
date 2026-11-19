@@ -4,7 +4,7 @@ Fluxo de automação que recebe feedbacks de clientes de um app de delivery, cla
 
 Projeto de portfólio feito por mim para praticar automação com IA.
 
-![Fluxo no n8n](prints/fluxo.png)
+![Fluxo no n8n](fluxo.png)
 
 ## O problema
 
@@ -29,8 +29,8 @@ Urgência alta? ── sim ──> Enviar alerta por e-mail (Gmail)
 3. O resultado, junto com o feedback original e a data, é gravado no **Google Sheets**.
 4. Se a urgência for **alta**, o **Gmail** envia um e-mail de alerta com o resumo e o feedback original.
 
-![Planilha com os testes](prints/planilha-testes.png)
-![E-mail de alerta](prints/email-alerta.png)
+![Planilha com os testes](planilha-testes.png)
+![E-mail de alerta](email-alerta.png)
 
 ## O que a IA devolve
 
